@@ -32,7 +32,6 @@ F17 = Integers(17)
 P.<x> = F17[]
 x = P.0
 
-
 # Now let's find the embedding degree.
 # The embedding degree is the smallest k such that r|p^k - 1
 # In other words:
@@ -179,16 +178,16 @@ D = Matrix(F17, [
 ])
 Di = D.inverse()
 
-# Now we can find polynomials (f_a, f_b, f_c, q_L, q_R....)
+# Now we can find polynomials (fa, fb, fc, fqL, fqR....)
 # using matrix multiplication
-f_a = P(list(Di * a))
-f_b = P(list(Di * b))
-f_c = P(list(Di * c))
-q_L = P(list(Di * q_L))
-q_R = P(list(Di * q_R))
-q_O = P(list(Di * q_O))
-q_M = P(list(Di * q_M))
-q_C = P(list(Di * q_C))
+fa = P(list(Di * a))
+fb = P(list(Di * b))
+fc = P(list(Di * c))
+fqL = P(list(Di * q_L))
+fqR = P(list(Di * q_R))
+fqO = P(list(Di * q_O))
+fqM = P(list(Di * q_M))
+fqC = P(list(Di * q_C))
 
 # The copy constraints involving left, right, output values are encoded as
 # polynomials S_sigma_1, S_sigma_2, S_sigma_3 using the cosets we found
@@ -209,9 +208,9 @@ print(f"sigma_2: {sigma_2}")
 sigma_3 = vector(F17, [H[2], k1H[2], k2H[2]])
 print(f"sigma_3: {sigma_3}")
 
-sa = P(list(Di * sigma_1))
-sb = P(list(Di * sigma_1))
-sc = P(list(Di * sigma_1))
+fsa = P(list(Di * sigma_1))
+fsb = P(list(Di * sigma_1))
+fsc = P(list(Di * sigma_1))
 
 
 # Proving phase
@@ -230,3 +229,16 @@ assert Z(16) == 0
 # 9 random blinding values. We will use:
 # 7, 4, 11, 12, 16, 2
 # 14, 11, 7 (used in round 2)
+
+# Blind our witness polynomials
+# The blinding factors will disappear at the evaluation points.
+a = (7*x + 4) * Z + fa
+b = (11*x + 12) * Z + fb
+c = (16*x + 2) * Z + fc
+
+# So now we evaluate a, b, c at secret `s` with these powers of G
+a_s = ZZ(a(s)) * G_1
+b_s = ZZ(b(s)) * G_1
+c_s = ZZ(c(s)) * G_1
+
+# Round 2
