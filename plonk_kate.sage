@@ -1,3 +1,7 @@
+# Based upon 
+# https://research.metastate.dev/plonk-by-hand-part-1/
+# https://github.com/darkrenaissance/darkfi/tree/master/script/research
+
 # Setup phase
 
 # We'll use y^2 = x^3 + 3 for our curve, over F_101
@@ -301,3 +305,59 @@ t_hi = t_list[12:18]
 t_lo_s = ZZ(P(t_lo)(s)) * G_1
 t_mid_s = ZZ(P(t_mid)(s)) * G_1
 t_hi_s = ZZ(P(t_hi)(s)) * G_1
+
+# Round 4
+
+zeta = 5
+
+a_ = a(zeta)
+b_ = b(zeta)
+c_ = c(zeta)
+sa_ = fsa(zeta)
+sb_ = fsb(zeta)
+t_ = t(zeta)
+zw_ = Zx(zeta * H[1])
+l_ = L(zeta)
+
+r1 = a_ * b_ * fqM + a_ * fqL + b_ * fqR + c_ * fqO + fqC
+
+r2 = ((a_ + beta * zeta + gamma)
+    * (b_ + beta * k_1 * zeta + gamma)
+    * (c_ + beta * k_2 * zeta + gamma)) * Zx * alpha
+
+r3 = -((a_ + beta * sa_ + gamma)
+    * (b_ + beta * sb_ + gamma)
+    * beta * zw_ * fsc * alpha)
+
+r4 = Zx * l_ * alpha^2
+
+r = r1 + r2 + r3 + r4
+
+r_ = r(zeta)
+
+# Round 5
+
+vega = 12
+
+v1 = P(t_lo)
+# Polynomial was in parts consisting of 6 powers
+v2 = zeta^6 * P(t_mid)
+v3 = zeta^12 * P(t_hi)
+v4 = -t_
+v5 = (
+    vega * (r - r_)
+    + vega^2 * (a - a_) + vega^3 * (b - b_) + vega^4 * (c - c_)
+    + vega^5 * (fsa - sa_) + vega^6 * (fsb - sb_)
+)
+
+W = v1 + v2 + v3 + v4 + v5
+Wz = W / (x - zeta)
+# Calculate the opening proof
+Wzw = (Zx - zw_) / (x - zeta * H[1])
+
+# Compute evaluations of Wz and Wzw
+Wz_s = ZZ(Wz(s)) * G_1
+Wzw_s = ZZ(Wzw(s)) * G_1
+
+
+# Verification Phase
