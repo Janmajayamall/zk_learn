@@ -64,7 +64,7 @@ G_2 = E2(36, 31*u)
 # We choose 2 as our random number for demo purposes.
 s = 2
 # Our circuit will have 3 gates.
-n_gates = 3
+n_gates = 4
 
 SRS = []
 for i in range(0, n_gates+3):
@@ -243,13 +243,13 @@ for i in range(4):
     # and H_{2n + j} is c(H[i])
     accs.append(acc)
     acc = acc * (
-        (fa(H[i]) + beta * H[i] + gamma)
-        * (fb(H[i]) + beta * k_1 * H[i] + gamma)
-        * (fc(H[i]) + beta * k_2 * H[i] + gamma) /
+        (a(H[i]) + beta * H[i] + gamma)
+        * (b(H[i]) + beta * k_1 * H[i] + gamma)
+        * (c(H[i]) + beta * k_2 * H[i] + gamma) /
         (
-            (fa(H[i]) + beta * fsa(H[i]) + gamma)
-            * (fb(H[i]) + beta * fsb(H[i]) + gamma)
-            * (fc(H[i]) + beta * fsc(H[i]) + gamma)
+            (a(H[i]) + beta * fsa(H[i]) + gamma)
+            * (b(H[i]) + beta * fsb(H[i]) + gamma)
+            * (c(H[i]) + beta * fsc(H[i]) + gamma)
         )
     )
 
@@ -264,17 +264,17 @@ Z_s = ZZ(Zx(s)) * G_1
 
 alpha = 15
 
-t1Z = fa * fb * fqM + fa * fqL + fb * fqR + fc * fqO + fqC
+t1Z = a * b * fqM + a * fqL + b * fqR + c * fqO + fqC
 
-t2Z = ((fa + beta * x + gamma)
-    * (fb + beta * k_1 * x + gamma)
-    * (fc + beta * k_2 * x + gamma)) * Zx * alpha
+t2Z = ((a + beta * x + gamma)
+    * (b + beta * k_1 * x + gamma)
+    * (c + beta * k_2 * x + gamma)) * Zx * alpha
 
 # w[1] is our first root of unity
 Zw = Zx(H[1] * x)
-t3Z = -((fa + beta * fsa + gamma)
-    * (fb + beta * fsb + gamma)
-    * (fc + beta * fsc + gamma)) * Zw * alpha
+t3Z = -((a + beta * fsa + gamma)
+    * (b + beta * fsb + gamma)
+    * (c + beta * fsc + gamma)) * Zw * alpha
 
 # Lagrangian polynomial which evaluates to 1 at 1
 # L_1(w_1) = 1 and 0 on the other evaluation points
@@ -292,4 +292,12 @@ tZ = t1Z + t2Z + t3Z + t4Z
 t = P(tZ / Z)
 
 # Split t into 3 parts
-print(t)
+# t(X) = t_lo(X) + X^n t_mid(X) + X^{2n} t_hi(X)
+t_list = t.list()
+t_lo = t_list[0:6]
+t_mid = t_list[6:12]
+t_hi = t_list[12:18]
+# and create the evaluations
+t_lo_s = ZZ(P(t_lo)(s)) * G_1
+t_mid_s = ZZ(P(t_mid)(s)) * G_1
+t_hi_s = ZZ(P(t_hi)(s)) * G_1
