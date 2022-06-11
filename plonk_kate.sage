@@ -46,7 +46,6 @@ while True:
     
 print(f"Found embedding degree: k={k}")
 
-
 # Our extension field. The polynomial x^2+2 is irreducible in F_101.
 F2.<u> = F.extension(x_f^2+2, 'u')
 assert u^2 == -2
@@ -107,58 +106,44 @@ for i in range(0, 2):
 # c_i (output) values will be (4, 9, 13)
 
 
-# Selectors
-q_L = vector(F17, [0, 0, 1])
-q_R = vector(F17, [0, 0, 1])
-q_O = vector(F17, [-1, -1, -1])
-q_M = vector(F17, [1, 1, 0])
-q_C = vector(F17, [0, 0, 0])
-# Assignments
-a = vector(F17, [2, 3, 4])
-b = vector(F17, [2, 3, 9])
-c = vector(F17, [4, 9, 13])
-
-# Roots of Unity.
-# The vectors for our circuit and assignment are all length 3, so the domain
-# for our polynomial interpolation must have at least three elements.
-roots_of_unity = []
-F_r = FiniteField(r)
-for i in F_r:
-    # 4th root of unity
-	if i^4 == 1:
-		roots_of_unity.append(i)
-
-# our domain size is 3 
-omega_0 = roots_of_unity[0]
-omega_1 = roots_of_unity[1]
-omega_2 = roots_of_unity[3]
-
-
-# Cosets
+# Roots of unity and Cosets
 # k_1 not in H, k_2 not in H nor k_1H
 k_1 = 2
 k_2 = 3
-H = vector(F17, [omega_0, omega_1, omega_2])
-k1H = vector(F17, [H[0]*k_1, H[1]*k_1, H[2]*k_1])
-k2H = vector(F17, [H[0]*k_2, H[1]*k_2, H[2]*k_2])
+H = vector(F17, [1, 4, 16, 13])
+k1H = vector(F17, [H[0]*k_1, H[1]*k_1, H[2]*k_1, H[3]*k_1])
+k2H = vector(F17, [H[0]*k_2, H[1]*k_2, H[2]*k_2, H[3]*k_2])
 print("Polynomial interpolation using roots of unity")
 print(f"H:   {H}")
 print(f"k1H: {k1H}")
 print(f"k2H: {k2H}")
 
-# Interpolating using the Roots of Unity
-# The interpolated polynomial will be degree-2 and have the form:
-# f_a(x) = c + b*x + a*x^2
-# f_a(1) = 2, f_a(4) = 3, f_a(16) = 4
-# Note that the above x is H (the omegas)
+
+# Selectors
+# Since we only need 3 gates, but have 
+# 4 4th roots of unity, our last gate only 
+# consists of 0
+q_L = vector(F17, [0, 0, 1, 0])
+q_R = vector(F17, [0, 0, 1, 0])
+q_O = vector(F17, [-1, -1, -1, 0])
+q_M = vector(F17, [1, 1, 0, 0])
+q_C = vector(F17, [0, 0, 0, 0])
+# Assignments
+a = vector(F17, [2, 3, 4, 0])
+b = vector(F17, [2, 3, 9, 0])
+c = vector(F17, [4, 9, 13, 0])
+
+
+# Interpolating polynomials on roots_of_unity
+# The interpolated polynomial will be degree-3 and have the form (fa):
+# fa(x) = d + cx + b*x^2 + a*x^3
+# fa(1) = 2, fa(4) = 3, fa(16) = 4, f(13) = 0
 #
 # This gives a system of equations:
-# f_a(1)  = c + b*1 + a*1^2   = 2
-# f_a(4)  = c + b*4 + a*4^2   = 3
-# f_a(16) = c + b*16 + a*16^2 = 4
+# fa(x={1,3,16,13})  = d + cx + b*x^2 + a*x^3  = {2,3,4,0}
 
-# We can find coefficients of 3 degreee polynomial with evals (o1, o2, o3)
-# at root of unity (1, 4, 16) by:
+# We can find coefficients of 4 degreee polynomial with evals
+# at (1, 4, 16, 3) by:
 #   D * C = O 
 #       where D is domain matrix
 #             C is coeff vector
@@ -166,15 +151,17 @@ print(f"k2H: {k2H}")
 #   => C = D^-1 * O
 # 
 # D (in our case) is
-#   1, 1, 1^2
-#   1, 4, 4^2,
-#   1, 16, 16^2
+#   1, 1, 1^2, 1^3
+#   1, 4, 4^2, 4^3
+#   1, 16, 16^2, 16^3
+#   1, 13, 13^2, 13^2
 
 
 D = Matrix(F17, [
-		[1^0, 1^1, 1^2],
-		[4^0, 4^1, 4^2],
-		[16^0, 16^1, 16^2],
+		[1^0, 1^1, 1^2, 1^3],
+		[4^0, 4^1, 4^2, 4^3],
+		[16^0, 16^1, 16^2, 16^3],
+        [13^0, 13^1, 13^2, 13^3],
 ])
 Di = D.inverse()
 
@@ -198,19 +185,19 @@ print("Copy constraints:")
 print(f"a: {a}")
 print(f"b: {b}")
 print(f"c: {c}")
-# a1 = b1, a2 = b2, a3 = c1
-sigma_1 = vector(F17, [k1H[0], k1H[1], k2H[0]])
+# a1 = b1, a2 = b2, a3 = c1, a4=a4
+sigma_1 = vector(F17, [k1H[0], k1H[1], k2H[0], H[3]])
 print(f"sigma_1: {sigma_1}")
-# b1 = a1, b2 = a2, b3 = c2
-sigma_2 = vector(F17, [H[0], H[1], k2H[1]])
+# b1 = a1, b2 = a2, b3 = c2, b4=b4
+sigma_2 = vector(F17, [H[0], H[1], k2H[1], k1H[3]])
 print(f"sigma_2: {sigma_2}")
-# c1 = a3, c2 = b3, c3 = c3
-sigma_3 = vector(F17, [H[2], k1H[2], k2H[2]])
+# c1 = a3, c2 = b3, c3 = c3, c4=c4
+sigma_3 = vector(F17, [H[2], k1H[2], k2H[2], k2H[3]])
 print(f"sigma_3: {sigma_3}")
 
 fsa = P(list(Di * sigma_1))
-fsb = P(list(Di * sigma_1))
-fsc = P(list(Di * sigma_1))
+fsb = P(list(Di * sigma_2))
+fsc = P(list(Di * sigma_3))
 
 
 # Proving phase
@@ -225,6 +212,7 @@ Z = x^4 - 1
 assert Z(1) == 0
 assert Z(4) == 0
 assert Z(16) == 0
+assert Z(13) == 0
 
 # 9 random blinding values. We will use:
 # 7, 4, 11, 12, 16, 2
@@ -241,4 +229,67 @@ a_s = ZZ(a(s)) * G_1
 b_s = ZZ(b(s)) * G_1
 c_s = ZZ(c(s)) * G_1
 
+
 # Round 2
+
+# Random transcript challenges
+beta = 12
+gamma = 13
+# Build accumulation
+acc = 1
+accs = []
+for i in range(4):
+    # H_{n + j} corresponds to b(H[i])
+    # and H_{2n + j} is c(H[i])
+    accs.append(acc)
+    acc = acc * (
+        (fa(H[i]) + beta * H[i] + gamma)
+        * (fb(H[i]) + beta * k_1 * H[i] + gamma)
+        * (fc(H[i]) + beta * k_2 * H[i] + gamma) /
+        (
+            (fa(H[i]) + beta * fsa(H[i]) + gamma)
+            * (fb(H[i]) + beta * fsb(H[i]) + gamma)
+            * (fc(H[i]) + beta * fsc(H[i]) + gamma)
+        )
+    )
+
+acc = P(list(Di * vector(F17, accs)))
+
+Zx = (14*x^2 + 11*x + 7) * Z + acc
+# Evaluate z(x) at our secret point
+Z_s = ZZ(Zx(s)) * G_1
+
+
+# Round 3
+
+alpha = 15
+
+t1Z = fa * fb * fqM + fa * fqL + fb * fqR + fc * fqO + fqC
+
+t2Z = ((fa + beta * x + gamma)
+    * (fb + beta * k_1 * x + gamma)
+    * (fc + beta * k_2 * x + gamma)) * Zx * alpha
+
+# w[1] is our first root of unity
+Zw = Zx(H[1] * x)
+t3Z = -((fa + beta * fsa + gamma)
+    * (fb + beta * fsb + gamma)
+    * (fc + beta * fsc + gamma)) * Zw * alpha
+
+# Lagrangian polynomial which evaluates to 1 at 1
+# L_1(w_1) = 1 and 0 on the other evaluation points
+L = P(list(Di * vector(F17, [1, 0, 0, 0])))
+print(L)
+assert L(1) == 1
+assert L(4) == 0
+assert L(16) == 0
+assert L(13) == 0
+
+t4Z = (Zx - 1) * L * alpha^2
+
+tZ = t1Z + t2Z + t3Z + t4Z
+# and cancel out the factor Z now
+t = P(tZ / Z)
+
+# Split t into 3 parts
+print(t)
