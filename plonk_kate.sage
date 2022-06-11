@@ -1,3 +1,5 @@
+# Setup phase
+
 # We'll use y^2 = x^3 + 3 for our curve, over F_101
 p = 101
 F = FiniteField(p)
@@ -22,6 +24,13 @@ while True:
         break
 
 print(f"Found subgroup of order r={r} using generator {G_1}")
+
+# Our group have order 17 and our proofs
+# will be a point in the group. So we would
+# do all our operations in F17
+F17 = Integers(17)
+P.<x> = F17[]
+x = P.0
 
 
 # Now let's find the embedding degree.
@@ -56,8 +65,8 @@ G_2 = E2(36, 31*u)
 
 # We choose 2 as our random number for demo purposes.
 s = 2
-# Our circuit will have 4 gates.
-n_gates = 4
+# Our circuit will have 3 gates.
+n_gates = 3
 
 SRS = []
 for i in range(0, n_gates+3):
@@ -100,15 +109,15 @@ for i in range(0, 2):
 
 
 # Selectors
-q_L = vector([0, 0, 1])
-q_R = vector([0, 0, 1])
-q_O = vector([-1, -1, -1])
-q_M = vector([1, 1, 0])
-q_C = vector([0, 0, 0])
+q_L = vector(F17, [0, 0, 1])
+q_R = vector(F17, [0, 0, 1])
+q_O = vector(F17, [-1, -1, -1])
+q_M = vector(F17, [1, 1, 0])
+q_C = vector(F17, [0, 0, 0])
 # Assignments
-a = vector([2, 3, 4])
-b = vector([2, 3, 9])
-c = vector([4, 9, 13])
+a = vector(F17, [2, 3, 4])
+b = vector(F17, [2, 3, 9])
+c = vector(F17, [4, 9, 13])
 
 # Roots of Unity.
 # The vectors for our circuit and assignment are all length 3, so the domain
@@ -130,9 +139,9 @@ omega_2 = roots_of_unity[3]
 # k_1 not in H, k_2 not in H nor k_1H
 k_1 = 2
 k_2 = 3
-H = [omega_0, omega_1, omega_2]
-k1H = [H[0]*k_1, H[1]*k_1, H[2]*k_1]
-k2H = [H[0]*k_2, H[1]*k_2, H[2]*k_2]
+H = vector(F17, [omega_0, omega_1, omega_2])
+k1H = vector(F17, [H[0]*k_1, H[1]*k_1, H[2]*k_1])
+k2H = vector(F17, [H[0]*k_2, H[1]*k_2, H[2]*k_2])
 print("Polynomial interpolation using roots of unity")
 print(f"H:   {H}")
 print(f"k1H: {k1H}")
@@ -162,26 +171,24 @@ print(f"k2H: {k2H}")
 #   1, 4, 4^2,
 #   1, 16, 16^2
 
-# Inverse of D matric where c is vector
-# of inputs (i.e. 1, 4, 16)
-def inverse_matrix(c):
-	return Matrix([
-		[c[0]^0, c[0]^1, c[0]^2],
-		[c[1]^0, c[1]^1, c[1]^2],
-		[c[2]^0, c[2]^1, c[2]^2],
-	])^-1
 
+D = Matrix(F17, [
+		[1^0, 1^1, 1^2],
+		[4^0, 4^1, 4^2],
+		[16^0, 16^1, 16^2],
+])
+Di = D.inverse()
 
 # Now we can find polynomials (f_a, f_b, f_c, q_L, q_R....)
 # using matrix multiplication
-f_a_coeffs = inverse_matrix(H) * a
-f_b_coeffs = inverse_matrix(H) * b
-f_c_coeffs = inverse_matrix(H) * c
-q_L_coeffs = inverse_matrix(H) * q_L
-q_R_coeffs = inverse_matrix(H) * q_R
-q_O_coeffs = inverse_matrix(H) * q_O
-q_M_coeffs = inverse_matrix(H) * q_M
-q_C_coeffs = inverse_matrix(H) * q_C
+f_a = P(list(Di * a))
+f_b = P(list(Di * b))
+f_c = P(list(Di * c))
+q_L = P(list(Di * q_L))
+q_R = P(list(Di * q_R))
+q_O = P(list(Di * q_O))
+q_M = P(list(Di * q_M))
+q_C = P(list(Di * q_C))
 
 # The copy constraints involving left, right, output values are encoded as
 # polynomials S_sigma_1, S_sigma_2, S_sigma_3 using the cosets we found
@@ -193,11 +200,33 @@ print(f"a: {a}")
 print(f"b: {b}")
 print(f"c: {c}")
 # a1 = b1, a2 = b2, a3 = c1
-sigma_1 = vector([k1H[0], k1H[1], k2H[0]])
+sigma_1 = vector(F17, [k1H[0], k1H[1], k2H[0]])
 print(f"sigma_1: {sigma_1}")
 # b1 = a1, b2 = a2, b3 = c2
-sigma_2 = vector([H[0], H[1], k2H[1]])
+sigma_2 = vector(F17, [H[0], H[1], k2H[1]])
 print(f"sigma_2: {sigma_2}")
 # c1 = a3, c2 = b3, c3 = c3
-sigma_3 = vector([H[2], k1H[2], k2H[2]])
+sigma_3 = vector(F17, [H[2], k1H[2], k2H[2]])
 print(f"sigma_3: {sigma_3}")
+
+sa = P(list(Di * sigma_1))
+sb = P(list(Di * sigma_1))
+sc = P(list(Di * sigma_1))
+
+
+# Proving phase
+
+# Round 1
+
+# Create vanishing polynomial that evaluates to 0 
+# in our subgroup (i.e. 4th root of unity).
+# Since H = {x ε F_17 | x^4 == 1}
+#   Z = x^4 - 1
+Z = x^4 - 1
+assert Z(1) == 0
+assert Z(4) == 0
+assert Z(16) == 0
+
+# 9 random blinding values. We will use:
+# 7, 4, 11, 12, 16, 2
+# 14, 11, 7 (used in round 2)
