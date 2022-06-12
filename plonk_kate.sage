@@ -361,3 +361,84 @@ Wzw_s = ZZ(Wzw(s)) * G_1
 
 
 # Verification Phase
+
+qm_s = ZZ(fqM(s)) * G_1
+ql_s = ZZ(fqL(s)) * G_1
+qr_s = ZZ(fqR(s)) * G_1
+qo_s = ZZ(fqO(s)) * G_1
+qc_s = ZZ(fqC(s)) * G_1
+sa_s = ZZ(fsa(s)) * G_1
+sb_s = ZZ(fsb(s)) * G_1
+sc_s = ZZ(fsc(s)) * G_1
+
+upsilon = 4
+
+# step 1
+# Verify that a_s, b_s, c_s, Z_s, t_lo_s, t_mid_s, t_high_s, Wz_s, Wzw_s
+# are on curve
+
+# step 2
+# Verify that a_, b_, c_, sa_, sb_, r_, zw_ are in F17
+
+# step 3
+
+# step 4
+Z_z = F17(zeta^4 - 1)
+
+# step 5
+L1_z = F17((zeta^4 - 1)/(4 * (zeta - 1)))
+assert L1_z == 5
+
+# step 6
+
+# step 7
+t_ = (r_ - (a_ + beta * sa_ + gamma)
+           * (b_ + beta * sb_ + gamma)
+           * (c_ + gamma) * zw_ * alpha
+         - L1_z * alpha^2) / Z_z
+
+# step 8
+# qx_s are points, and we are multiplying them by scalars
+# so convert the values to integers first
+d1 = (ZZ(a_ * b_ * vega) * qm_s
+      + ZZ(a_ * vega) * ql_s
+      + ZZ(b_ * vega) * qr_s
+      + ZZ(c_ * vega) * qo_s
+      + vega * qc_s)
+d2 = ZZ((a_ + beta * zeta + gamma)
+        * (b_ + beta * k_1 * zeta + gamma)
+        * (c_ + beta * k_2 * zeta + gamma)
+        * alpha * vega
+        + L1_z * alpha^2 * vega
+        + F17(upsilon)) * Z_s
+d3 = -ZZ((a_ + beta * sa_ + gamma)
+         * (b_ + beta * sb_ + gamma)
+         * alpha * vega * beta * zw_) * sc_s
+d = d1 + d2 + d3
+
+# step 9
+f = (t_lo_s + zeta^6 * t_mid_s + zeta^12 * t_hi_s
+     + d
+     + vega^2 * a_s + vega^3 * b_s + vega^4 * c_s
+     + vega^5 * sa_s + vega^6 * sb_s)
+
+# step 10
+e = ZZ(t_ + vega * r_
+       + vega^2 * a_ + vega^3 * b_ + vega^4 * c_
+       + vega^5 * sa_ + vega^6 * sb_
+       + upsilon * zw_) * G_1
+
+# step 11
+# construct points for the pairing check
+x1 = Wz_s + upsilon * Wzw_s
+x2 = s * G_2
+
+y1 = zeta * Wz_s + ZZ(upsilon * zeta * H[1]) * Wzw_s + f - e
+y2 = G_2
+
+# do the pairing check
+x1_ = E2(x1)
+x2_ = E2(x2)
+y1_ = E2(y1)
+y2_ = E2(y2)
+assert x1_.weil_pairing(x2_, 17) == y1_.weil_pairing(y2_, 17)
