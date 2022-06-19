@@ -7,7 +7,7 @@ def gcd(a, b):
         a, b = b, a % b
     return a
 
-print(gcd(23, 37))
+# print(gcd(23, 37))
 
 def extendedEuclideanAlgorithm(a, b):
     if (mod(b) > mod(a)):
@@ -26,4 +26,8 @@ def extendedEuclideanAlgorithm(a, b):
     
     return (x2, y2, a)
 
+def add():
+    f = (1025).to_bytes(2, byteorder='big')
+    print(f)
 
+add()
