@@ -9,6 +9,12 @@ edition = "2021"
 name = "example1"
 path = "src/example1.rs"
 
+[[bin]]
+name = "example2"
+path = "src/example2.rs"
+
 [dependencies]
 halo2_proofs = { git = "https://github.com/zcash/halo2.git", rev = "a898d65ae3ad3d41987666f6a03cfc15edae01c4", features = ["dev-graph"]}
-plotters = { version = "0.3.0"}
+plotters = "0.3.0"
+rand_core = {version = "0.6.3", features = ["getrandom"]}
+group = "0.12.0"
